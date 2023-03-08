@@ -29,6 +29,7 @@ public:
         NCS3 = 3,
     };
 
+protected:
     /**
      * Initialize the \ref moduleBaseAddress constant.
      * @param chipSelect Number of the Chip Select used for enabling the external module.
