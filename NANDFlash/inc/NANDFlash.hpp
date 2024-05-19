@@ -5,6 +5,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "Logger.hpp"
+#include "nand_MT29F_lld.hpp"
+#include "etl/span.h"
 
 /**
  * This is a driver for MT29F NAND Flash.
@@ -21,7 +23,9 @@ private:
     const PIO_PIN nandWriteProtect = PIO_PIN_NONE;
 
     inline static constexpr uint8_t
-    enableNandConfiguration = 1;
+            enableNandConfiguration = 1;
+
+    const static inline uint8_t TimeoutCycles = 20;
 
     /**
      * @param chipSelect Number of the Chip Select used for enabling the Nand Flash Die.
@@ -50,26 +54,54 @@ private:
     }
 
 public:
-
-    constexpr MT29F(ChipSelect chipSelect, PIO_PIN nandReadyBusyPin, PIO_PIN nandWriteProtect) : SMC(chipSelect), nandReadyBusyPin(nandReadyBusyPin),
-                                                                                                 nandWriteProtect(nandWriteProtect) {
+    constexpr MT29F(ChipSelect chipSelect, PIO_PIN nandReadyBusyPin, PIO_PIN nandWriteProtect) : SMC(chipSelect),
+                                                                                                 nandReadyBusyPin(
+                                                                                                         nandReadyBusyPin),
+                                                                                                 nandWriteProtect(
+                                                                                                         nandWriteProtect) {
         selectNandConfiguration(chipSelect);
     }
 
-    inline void sendData(uint8_t data) {
+    inline void PLATFORM_SendData(uint8_t data) {
         smcWriteByte(moduleBaseAddress, data);
     }
 
-    inline void sendAddress(uint8_t address) {
+    inline void PLATFORM_SendAddr(uint8_t address) {
         smcWriteByte(triggerNANDALEAddress, address);
     }
 
-    inline void sendCommand(uint8_t command) {
+    inline void PLATFORM_SendCmd(uint8_t command) {
         smcWriteByte(triggerNANDCLEAddress, command);
     }
 
-    inline uint8_t readData() {
+    inline uint8_t PLATFORM_ReadData() {
         return smcReadByte(moduleBaseAddress);
     }
+
+    inline void PLATFORM_Open(void){
+
+    }
+
+    inline void PLATFORM_Close(void){
+
+    }
+
+    uint8_t resetNAND(); // TODO: use etl::expected
+
+    bool readNANDID(etl::array<uint8_t, 8> &id);
+
+    uint8_t eraseBlock(uint8_t LUN, uint16_t block); // TODO: use etl::expected
+
+    uint8_t detectArrayError(); // TODO: use etl::expected
+
+    bool isNANDAlive();
+
+    uint8_t PLATFORM_Wait(int nanoseconds); // TODO: use etl::expected
+
+    uint8_t errorHandler(); // TODO: use etl::expected
+
+    bool writeNAND(uint8_t LUN, uint32_t page, uint32_t column, etl::array<uint8_t, 20> &data);
+
+    bool readNAND(uint8_t LUN, uint32_t page, uint32_t column, etl::array<uint8_t, 20> &data);
 
 };
